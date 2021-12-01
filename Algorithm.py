@@ -15,13 +15,12 @@ def main(data):
         print(t2e.get_emotion(l['text']))
         positive = 0
         negative = 0
-        for word in l:
+        text = l['text'].split()
+        for word in text:
             if word in positive_list:
                 positive += 1
-            elif word in negative_list:
+            if word in negative_list:
                 negative += 1
-        print(positive)
-        print(negative)
         Sqlite.insert_variable_into_table(l['cid'], l['votes'], positive, negative)
 
 # def searchforemotions(s):
