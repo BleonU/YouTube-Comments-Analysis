@@ -1,7 +1,10 @@
 import text2emotion as t2e
 
+import Sqlite
+
 
 def main(data):
+
     with open('negative-keywords.json', encoding="utf8") as f:
         for line in f:
             negative_list = line
@@ -19,6 +22,7 @@ def main(data):
                 negative += 1
         print(positive)
         print(negative)
+        Sqlite.insert_variable_into_table(l['cid'], l['votes'], positive, negative)
 
 # def searchforemotions(s):
 #     if s in emotions:
