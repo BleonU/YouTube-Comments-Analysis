@@ -62,10 +62,10 @@ def main(data):
         # if len(l['cid'].split(".")) > 1:
         #     repliesCount = findReplies(l['cid'], data)
         if overall[1][1] > 0 and overall[3][1] > 0:
-            sql.insert_variable_into_table(l['cid'], 'constructive', l['votes'], subCount, findReplies(l['cid'], data))
+            sql.insert_variable_into_table(l['cid'], 'constructive', l['votes'], subCount, findReplies(l['cid'], data), l['author'], l['text'])
         elif overall[1][1] > 0:
-            sql.insert_variable_into_table(l['cid'], 'negative', l['votes'], subCount, findReplies(l['cid'], data))
+            sql.insert_variable_into_table(l['cid'], 'negative', l['votes'], subCount, findReplies(l['cid'], data), l['author'], l['text'])
         elif overall[3][1] > 0:
-            sql.insert_variable_into_table(l['cid'], 'positive', l['votes'], subCount, findReplies(l['cid'], data))
+            sql.insert_variable_into_table(l['cid'], 'positive', l['votes'], subCount, findReplies(l['cid'], data), l['author'], l['text'])
         elif overall[2][1] > 0:
-            sql.insert_variable_into_table(l['cid'], 'whatever', l['votes'], subCount, findReplies(l['cid'], data))
+            sql.insert_variable_into_table(l['cid'], 'whatever', l['votes'], subCount, findReplies(l['cid'], data), l['author'], l['text'])

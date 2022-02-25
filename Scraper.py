@@ -129,7 +129,7 @@ def search_dict(partial, search_key):
                 stack.append(value)
 
 
-def main(argv=None):
+def main(id):
     parser = argparse.ArgumentParser(add_help=False,
                                      description=('Download Youtube comments without using the Youtube API'))
     parser.add_argument('--help', '-h', action='help', default=argparse.SUPPRESS,
@@ -142,6 +142,7 @@ def main(argv=None):
     parser.add_argument('--sort', '-s', type=int, default=SORT_BY_RECENT,
                         help='Whether to download popular (0) or recent comments (1). Defaults to 1')
 
+    argv = ['--youtubeid', id, '--output', 'comments.json']
     try:
         args = parser.parse_args() if argv is None else parser.parse_args(argv)
 
@@ -177,9 +178,3 @@ def main(argv=None):
     except Exception as e:
         print('Error:', str(e))
         sys.exit(1)
-
-    Main.main()
-
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
