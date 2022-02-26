@@ -1,7 +1,7 @@
 import sqlite3
 
 
-def insert_variable_into_table(cid, evaluation, likes, subcount, repliesAmount, name, text):
+def insert_variable_into_table(cid, evaluation, likes, subcount, repliesAmount, name, text, image, link):
     global sqliteConnection
     try:
         sqliteConnection = sqlite3.connect('comments.sqlite')
@@ -9,10 +9,10 @@ def insert_variable_into_table(cid, evaluation, likes, subcount, repliesAmount, 
         # print("Connected to SQLite")
 
         sqlite_insert_with_param = """INSERT INTO Comments
-                          (cid, evaluation, subcount, repliesAmount, likes, name, text) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?);"""
+                          (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
-        data_tuple = (cid, evaluation, subcount, repliesAmount, likes, name, text)
+        data_tuple = (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link)
         cursor.execute(sqlite_insert_with_param, data_tuple)
         sqliteConnection.commit()
         # print("Python Variables inserted successfully into SqliteDb_developers table")
@@ -55,8 +55,10 @@ def query(filter):
         sqliteConnection = sqlite3.connect('comments.sqlite')
         cursor = sqliteConnection.cursor()
         # print("Connected to SQLite")
-
-        sqlite_query = """SELECT * FROM Comments WHERE evaluation = '""" + filter + """';"""
+        if filter is None:
+            sqlite_query = """SELECT * FROM Comments;"""
+        else:
+            sqlite_query = """SELECT * FROM Comments WHERE evaluation = '""" + filter + """';"""
         cursor.execute(sqlite_query)
         return cursor.fetchall()
         sqliteConnection.commit()
