@@ -20,7 +20,8 @@ e.pack()
 
 records = []
 images = {}
-links = []
+links = {}
+variables = {}
 
 
 def callback(url):
@@ -37,7 +38,7 @@ def myClick():
         img_data = response.content
         img = ImageTk.PhotoImage(PIL.Image.open(BytesIO(img_data)).resize((50, 50)))
         images[record[0]] = img
-        links.append('https://www.youtube.com/channel/' + str(record[8]))
+        links[record[0]] = 'https://www.youtube.com/channel/' + str(record[8])
     next_window = Toplevel()
     main_frame = Frame(next_window)
     main_frame.pack(fill=BOTH, expand=1)
@@ -104,7 +105,7 @@ def getComments(records, window):
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")
     i = 0
 
-
+    buttons = dict()
     for record in records:
         frame = Frame(secondary_frame, width=550)
         frame.pack(anchor="w", expand=True, fill=X)
@@ -138,22 +139,20 @@ def getComments(records, window):
         panel = Label(picture, image=images.get(record[0]))
         panel.pack(side="bottom", fill="both", expand="yes")
 
-        print(links[records.index(record)])
-
-        name_label = Label(name, text=record[5])
+        buttons[record[0]] = Button(name, text=record[5],
+                                    command=lambda a=record[0]: callback(links.get(a)), borderwidth=0)
 
         sub_label = Label(sub, text='Subscriber Count: ' + str(record[2]))
         likes_label = Label(likes, text='Likes: ' + str(record[4]))
         text_label = Label(comment, text=record[6], wraplength=500, anchor="w")
 
-        name_label.pack()
-        name_label.bind("<Button-1>", lambda e: callback(links[records.index(record)]))
+        buttons[record[0]].pack()
         sub_label.pack()
         likes_label.pack()
         text_label.pack()
 
         window.destroy()
-        if records.index(record) == len(records)-1: lets_crash.pack()
+        # if records.index(record) == len(records)-1: lets_crash.pack()
 
 
 button_1 = Button(root, text="Start Algo", command=myClick)
