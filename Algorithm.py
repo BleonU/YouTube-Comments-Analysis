@@ -1,3 +1,4 @@
+import numpy as np
 import text2emotion as t2e
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
@@ -29,7 +30,8 @@ def findReplies(id, data):
     for l in data:
         if l['cid'].split(".")[0] == id and len(l['cid'].split(".")) > 1:
             replies.append(l['cid'])
-    return len(replies)
+            sql.insert_variable_into_replies(id, l['cid'])
+    return len(replies), replies
 
 
 def getNumberOfSubs(id):
@@ -43,7 +45,7 @@ def getNumberOfSubs(id):
 
 
 def main(data):
-    sql.delete_all_data_in_table()
+    sql.delete_all_data_in_tables()
 
     for l in data:
         # print("{0} has {1} subs".format(l['author'], getNumberOfSubs(l['channel'])))
@@ -58,18 +60,19 @@ def main(data):
         # for i in emotionList:
         #     if i < 0.5:
         subCount = getNumberOfSubs(l['channel'])
+        if subCount == 'hidden':
+            subCount = -1
         # repliesCount = 0
         # if len(l['cid'].split(".")) > 1:
         #     repliesCount = findReplies(l['cid'], data)
+        sentiment = 'whatever'
         if overall[1][1] > 0 and overall[3][1] > 0:
-            sql.insert_variable_into_table(l['cid'], 'constructive', l['votes'], subCount, findReplies(l['cid'], data),
-                                           l['author'], l['text'], l['photo'], l['channel'])
+            sentiment = 'constructive'
         elif overall[1][1] > 0:
-            sql.insert_variable_into_table(l['cid'], 'negative', l['votes'], subCount, findReplies(l['cid'], data),
-                                           l['author'], l['text'], l['photo'], l['channel'])
+            sentiment = 'negative'
         elif overall[3][1] > 0:
-            sql.insert_variable_into_table(l['cid'], 'positive', l['votes'], subCount, findReplies(l['cid'], data),
-                                           l['author'], l['text'], l['photo'], l['channel'])
-        elif overall[2][1] > 0:
-            sql.insert_variable_into_table(l['cid'], 'whatever', l['votes'], subCount, findReplies(l['cid'], data),
-                                           l['author'], l['text'], l['photo'], l['channel'])
+            sentiment = 'positive'
+        replySize, replies = findReplies(l['cid'], data)
+        sql.insert_variable_into_table(l['cid'], sentiment, l['votes'], subCount,
+                                       replySize, l['author'],
+                                       l['text'], l['photo'], l['channel'])
