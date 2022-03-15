@@ -18,7 +18,7 @@ import Sqlite
 root = Tk()
 
 e = Entry(root, width=100)
-e.pack()
+e.pack(side=LEFT)
 
 records = []
 images = {}
@@ -29,19 +29,36 @@ def callback(url):
     webbrowser.open_new(url)
 
 
-def myClick():
+def close(window, button, button2):
+    button2['state'] = NORMAL
+
+    button.destroy()
+    window.destroy()
+
+
+def start():
     parse = Parsing.main(e.get())
     # Scraper.main(parse['v'][0])
-    Main.main()
-    records = Sqlite.query('evaluation', None, 'Comments')
+    # Main.main()
+    comments = Button(root, text="Show Comments", command=lambda: show_comments(comments, start_algo))
+    comments.pack(side=BOTTOM)
+
+
+
+
+def show_comments(button, button2):
+    button['state'] = DISABLED
+    button2['state'] = DISABLED
+
+    records = Sqlite.query(None, 'Comments')
     for record in records:
         response = requests.get(record[7])
         img_data = response.content
         img = ImageTk.PhotoImage(PIL.Image.open(BytesIO(img_data)).resize((50, 50)))
         images[record[0]] = img
         links[record[0]] = 'https://www.youtube.com/channel/' + str(record[8])
-    next_window = Toplevel()
-    main_frame = Frame(next_window)
+    window = Toplevel()
+    main_frame = Frame(window)
     main_frame.pack(fill=BOTH, expand=1)
 
     canvas = Canvas(main_frame, height=800, width=550)
@@ -51,7 +68,7 @@ def myClick():
     w.pack(side=RIGHT, fill=Y)
 
     canvas.config(yscrollcommand=w.set)
-    canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+    canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=main_frame.bbox("all")))
 
     secondary_frame = Frame(canvas)
     button_menu = Frame(secondary_frame)
@@ -61,20 +78,21 @@ def myClick():
     likes = StringVar(value="off")
     subs = StringVar(value="off")
 
-    Checkbutton(button_menu, text="Likes", variable=likes, onvalue="on", offvalue="off").pack()
-    Checkbutton(button_menu, text="Subs", variable=subs, onvalue="on", offvalue="off").pack()
+    Checkbutton(button_menu, text="Likes", variable=likes, onvalue="on", offvalue="off").pack(side=RIGHT)
+    Checkbutton(button_menu, text="Subs", variable=subs, onvalue="on", offvalue="off").pack(side=RIGHT)
 
-    Radiobutton(button_menu, text="Censored", variable=option, value="censor").pack()
-    Radiobutton(button_menu, text="Uncensored", variable=option, value="uncensored").pack()
-    Radiobutton(button_menu, text="Clean", variable=option, value="clean").pack()
+    Radiobutton(button_menu, text="Censored", variable=option, value="censor").pack(side=RIGHT)
+    Radiobutton(button_menu, text="Uncensored", variable=option, value="uncensored").pack(side=RIGHT)
+    Radiobutton(button_menu, text="Clean", variable=option, value="clean").pack(side=RIGHT)
 
-    parameters = [main_frame, option, likes, subs, next_window]
+    parameters = [main_frame, option, likes, subs, window, button, button2]
 
-    Button(button_menu, text="Positive", command=lambda: getComments('positive', parameters)).pack()
-    Button(button_menu, text="Negative", command=lambda: getComments('negative', parameters)).pack()
-    Button(button_menu, text="Constructive", command=lambda: getComments('constructive', parameters)).pack()
+    Button(button_menu, text="Positive", command=lambda: getComments('positive', parameters)).pack(side=LEFT)
+    Button(button_menu, text="Negative", command=lambda: getComments('negative', parameters)).pack(side=LEFT)
+    Button(button_menu, text="Constructive", command=lambda: getComments('constructive', parameters)).pack(side=LEFT)
 
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")
+    window.protocol("WM_DELETE_WINDOW", lambda: close(parameters[4], parameters[5], parameters[6]))
 
 
 
@@ -95,10 +113,10 @@ def get_replies(cid, censor):
     secondary_frame = Frame(canvas)
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")
 
-    replies = Sqlite.query('original_comment_id', cid, 'Replies')
+    replies = Sqlite.query("""original_comment_id = '""" + cid, 'Replies')
     records = []
     for reply in replies:
-        for l in Sqlite.query('cid', reply[1], 'Comments'):
+        for l in Sqlite.query("""cid = '""" + reply[1], 'Comments'):
             records.append(l)
     build_comments(records, secondary_frame, censor)
 
@@ -160,10 +178,10 @@ def build_comments(records, secondary_frame, censor):
 
 
 def getComments(filter, parameters):
-    records = Sqlite.query('evaluation', filter, 'Comments')
+    records = Sqlite.query("""evaluation = '""" + filter, 'Comments')
     old_frame = parameters[0]
     censor = parameters[1]
-    old_window = parameters[-1]
+    old_window = parameters[4]
     old_frame.destroy()
 
     if parameters[2].get() == "on":
@@ -171,10 +189,10 @@ def getComments(filter, parameters):
     if parameters[3].get() == "on":
         records.sort(key=lambda tup: tup[2], reverse=True)
 
-
-    next_window = old_window
-    main_frame = Frame(next_window)
+    main_frame = Frame(old_window)
     main_frame.pack(fill=BOTH, expand=1)
+
+    old_window.protocol("WM_DELETE_WINDOW", lambda: close(parameters[4], parameters[5], parameters[6]))
 
     canvas = Canvas(main_frame, height=800, width=600)
     canvas.pack(side=LEFT, fill=BOTH, expand=1)
@@ -192,27 +210,25 @@ def getComments(filter, parameters):
     likes = StringVar(value="off")
     subs = StringVar(value="off")
 
-    Checkbutton(button_menu, text="Likes", variable=likes, onvalue="on", offvalue="off").pack()
-    Checkbutton(button_menu, text="Subs", variable=subs, onvalue="on", offvalue="off").pack()
+    Checkbutton(button_menu, text="Likes", variable=likes, onvalue="on", offvalue="off").pack(side=RIGHT)
+    Checkbutton(button_menu, text="Subs", variable=subs, onvalue="on", offvalue="off").pack(side=RIGHT)
 
     option = StringVar(value=censor)
 
-    Radiobutton(button_menu, text="Censored", variable=option, value="censor").pack()
-    Radiobutton(button_menu, text="Uncensored", variable=option, value="uncensored").pack()
-    Radiobutton(button_menu, text="Clean", variable=option, value="clean").pack()
+    Radiobutton(button_menu, text="Censored", variable=option, value="censor").pack(side=RIGHT)
+    Radiobutton(button_menu, text="Uncensored", variable=option, value="uncensored").pack(side=RIGHT)
+    Radiobutton(button_menu, text="Clean", variable=option, value="clean").pack(side=RIGHT)
 
-    parameters = [main_frame, option, likes, subs, next_window]
+    parameters = [main_frame, option, likes, subs, old_window, parameters[5], parameters[6]]
 
-    Button(button_menu, text="Positive", command=lambda: getComments('positive', parameters)).pack()
-    Button(button_menu, text="Negative", command=lambda: getComments('negative', parameters)).pack()
-    Button(button_menu, text="Constructive", command=lambda: getComments('constructive', parameters)).pack()
+    Button(button_menu, text="Positive", command=lambda: getComments('positive', parameters)).pack(side=LEFT)
+    Button(button_menu, text="Negative", command=lambda: getComments('negative', parameters)).pack(side=LEFT)
+    Button(button_menu, text="Constructive", command=lambda: getComments('constructive', parameters)).pack(side=LEFT)
 
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")
     build_comments(records, secondary_frame, censor)
 
-        # if records.index(record) == len(records)-1: lets_crash.pack()
 
-
-button_1 = Button(root, text="Start Algo", command=myClick)
-button_1.pack()
+start_algo = Button(root, text="Start Algo", command=lambda: start())
+start_algo.pack(side=RIGHT)
 root.mainloop()

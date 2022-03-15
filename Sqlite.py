@@ -1,7 +1,7 @@
 import sqlite3
 
 
-def insert_variable_into_table(cid, evaluation, likes, subcount, repliesAmount, name, text, image, link):
+def insert_variable_into_table(cid, evaluation, likes, subcount, repliesAmount, name, text, image, link, value):
     global sqliteConnection
     try:
         sqliteConnection = sqlite3.connect('comments.sqlite')
@@ -9,10 +9,10 @@ def insert_variable_into_table(cid, evaluation, likes, subcount, repliesAmount, 
         # print("Connected to SQLite")
 
         sqlite_insert_with_param = """INSERT INTO Comments
-                          (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+                          (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link, evaluation_value) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
-        data_tuple = (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link)
+        data_tuple = (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link, value)
         cursor.execute(sqlite_insert_with_param, data_tuple)
         sqliteConnection.commit()
         # print("Python Variables inserted successfully into SqliteDb_developers table")
@@ -52,20 +52,19 @@ def delete_all_data_in_tables():
             sqliteConnection.close()
             # print("The SQLite connection is closed")
 
-def query(column, value, table):
+def query(query, table):
     global sqliteConnection
     try:
         sqliteConnection = sqlite3.connect('comments.sqlite')
         cursor = sqliteConnection.cursor()
         # print("Connected to SQLite")
-        if value is None:
+        if query is None:
             sqlite_query = """SELECT * FROM """ + table + """;"""
         else:
-            sqlite_query = """SELECT * FROM """ + table + """ WHERE """ + column + """ = '""" + value + """';"""
+            sqlite_query = """SELECT * FROM """ + table + """ WHERE """ + query + """';"""
+        print(sqlite_query)
         cursor.execute(sqlite_query)
         return cursor.fetchall()
-        sqliteConnection.commit()
-        # print("Python Variables inserted successfully into SqliteDb_developers table")
 
         cursor.close()
 

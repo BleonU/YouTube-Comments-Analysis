@@ -75,4 +75,4 @@ def main(data):
         replySize, replies = findReplies(l['cid'], data)
         sql.insert_variable_into_table(l['cid'], sentiment, l['votes'], subCount,
                                        replySize, l['author'],
-                                       l['text'], l['photo'], l['channel'])
+                                       l['text'], l['photo'], l['channel'], overall[0][1])
