@@ -61,8 +61,7 @@ def query(query, table):
         if query is None:
             sqlite_query = """SELECT * FROM """ + table + """;"""
         else:
-            sqlite_query = """SELECT * FROM """ + table + """ WHERE """ + query + """';"""
-        print(sqlite_query)
+            sqlite_query = """SELECT * FROM """ + table + """ WHERE """ + query + """;"""
         cursor.execute(sqlite_query)
         return cursor.fetchall()
 

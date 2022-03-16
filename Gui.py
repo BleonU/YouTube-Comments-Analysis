@@ -16,8 +16,9 @@ import Scraper
 import Sqlite
 
 root = Tk()
-
-e = Entry(root, width=100)
+search_frame = Frame(root)
+search_frame.pack(side=TOP)
+e = Entry(search_frame, width=100)
 e.pack(side=LEFT)
 
 records = []
@@ -37,11 +38,46 @@ def close(window, button, button2):
 
 
 def start():
+    start_time = time.time()
     parse = Parsing.main(e.get())
-    # Scraper.main(parse['v'][0])
-    # Main.main()
-    comments = Button(root, text="Show Comments", command=lambda: show_comments(comments, start_algo))
-    comments.pack(side=BOTTOM)
+    Scraper.main(parse['v'][0])
+    Main.main()
+    results_frame = Frame(root)
+    results_frame.pack(side=BOTTOM)
+    comments = Button(search_frame, text="Show Comments", command=lambda: show_comments(comments, start_algo))
+    comments.pack(side=LEFT)
+
+    all_values = []
+    for row in Sqlite.query("""evaluation_value <> 0 """, 'Comments'):
+        all_values.append(row[-1])
+    averageSentiment = ((sum(all_values) / len(all_values) + 1) / 2) * 100
+    s = Style()
+    s.theme_use('clam')
+    if averageSentiment > 70:
+        sentimentColour = 'green'
+    elif averageSentiment > 35:
+        sentimentColour = 'yellow'
+    else:
+        sentimentColour = 'red'
+
+    s.configure(sentimentColour + ".Horizontal.TProgressbar", foreground=sentimentColour, background=sentimentColour)
+
+    progressbar = Progressbar(results_frame, style=sentimentColour + ".Horizontal.TProgressbar",
+                              orient="horizontal", length=200)
+
+    progressbar['value'] = averageSentiment
+    progressbar.pack(side=TOP)
+
+    sentiment_label = Label(results_frame, text='Overall Sentiment Value: ' + str(round(progressbar['value'])))
+    sentiment_label.pack(side=BOTTOM)
+    # records = Sqlite.query(None, 'Comments')
+    # for record in records:
+        # response = requests.get(record[7])
+    #     img_data = response.content
+    #     img = ImageTk.PhotoImage(PIL.Image.open(BytesIO(img_data)).resize((50, 50)))
+    #     images[record[0]] = img
+    #     links[record[0]] = 'https://www.youtube.com/channel/' + str(record[8])
+    print('\n[{:.2f} seconds] Done!'.format(time.time() - start_time))
 
 
 
@@ -50,13 +86,7 @@ def show_comments(button, button2):
     button['state'] = DISABLED
     button2['state'] = DISABLED
 
-    records = Sqlite.query(None, 'Comments')
-    for record in records:
-        response = requests.get(record[7])
-        img_data = response.content
-        img = ImageTk.PhotoImage(PIL.Image.open(BytesIO(img_data)).resize((50, 50)))
-        images[record[0]] = img
-        links[record[0]] = 'https://www.youtube.com/channel/' + str(record[8])
+
     window = Toplevel()
     main_frame = Frame(window)
     main_frame.pack(fill=BOTH, expand=1)
@@ -113,10 +143,10 @@ def get_replies(cid, censor):
     secondary_frame = Frame(canvas)
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")
 
-    replies = Sqlite.query("""original_comment_id = '""" + cid, 'Replies')
+    replies = Sqlite.query("""original_comment_id = '""" + cid + """'""", 'Replies')
     records = []
     for reply in replies:
-        for l in Sqlite.query("""cid = '""" + reply[1], 'Comments'):
+        for l in Sqlite.query("""cid = '""" + reply[1] + """'""", 'Comments'):
             records.append(l)
     build_comments(records, secondary_frame, censor)
 
@@ -178,7 +208,7 @@ def build_comments(records, secondary_frame, censor):
 
 
 def getComments(filter, parameters):
-    records = Sqlite.query("""evaluation = '""" + filter, 'Comments')
+    records = Sqlite.query("""evaluation = '""" + filter + """'""", 'Comments')
     old_frame = parameters[0]
     censor = parameters[1]
     old_window = parameters[4]
@@ -229,6 +259,6 @@ def getComments(filter, parameters):
     build_comments(records, secondary_frame, censor)
 
 
-start_algo = Button(root, text="Start Algo", command=lambda: start())
-start_algo.pack(side=RIGHT)
+start_algo = Button(search_frame, text="Start Algo", command=lambda: start())
+start_algo.pack(side=LEFT)
 root.mainloop()

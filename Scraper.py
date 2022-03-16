@@ -132,23 +132,23 @@ def search_dict(partial, search_key):
 def main(id):
     parser = argparse.ArgumentParser(add_help=False,
                                      description=('Download Youtube comments without using the Youtube API'))
-    parser.add_argument('--help', '-h', action='help', default=argparse.SUPPRESS,
-                        help='Show this help message and exit')
-    parser.add_argument('--youtubeid', '-y', help='ID of Youtube video for which to download the comments')
-    parser.add_argument('--output', '-o', help='Output filename (output format is line delimited JSON)')
-    parser.add_argument('--limit', '-l', type=int, help='Limit the number of comments')
-    parser.add_argument('--language', '-a', type=str, default=None,
+    # parser.add_argument('--help', '-h', action='help', default=argparse.SUPPRESS,
+    #                     help='Show this help message and exit')
+    parser.add_argument('-y', help='ID of Youtube video for which to download the comments')
+    parser.add_argument('-o', help='Output filename (output format is line delimited JSON)')
+    parser.add_argument('-l', type=int, help='Limit the number of comments')
+    parser.add_argument('-a', type=str, default=None,
                         help='Language for Youtube generated text (e.g. en)')
-    parser.add_argument('--sort', '-s', type=int, default=SORT_BY_RECENT,
+    parser.add_argument('-s', type=int, default=SORT_BY_RECENT,
                         help='Whether to download popular (0) or recent comments (1). Defaults to 1')
 
-    argv = ['--youtubeid', id, '--output', 'comments.json']
+    argv = ['-y', id, '-o', 'comments.json']
     try:
         args = parser.parse_args() if argv is None else parser.parse_args(argv)
 
-        youtube_id = args.youtubeid
-        output = args.output
-        limit = args.limit
+        youtube_id = args.y
+        output = args.o
+        limit = args.l
 
         if not youtube_id or not output:
             parser.print_usage()
@@ -165,7 +165,7 @@ def main(id):
             sys.stdout.write('Downloaded %d comment(s)\r' % count)
             sys.stdout.flush()
             start_time = time.time()
-            for comment in download_comments(youtube_id, args.sort, args.language):
+            for comment in download_comments(youtube_id, args.s, args.l):
                 comment_json = json.dumps(comment, ensure_ascii=False)
                 print(comment_json.decode('utf-8') if isinstance(comment_json, bytes) else comment_json, file=fp)
                 count += 1
