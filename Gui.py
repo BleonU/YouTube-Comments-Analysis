@@ -45,15 +45,14 @@ def close(window, button, button2):
 def start():
     start_time = time.time()
     parse = Parsing.main(e.get())
-    # Scraper.main(parse['v'][0])
-    # Main.main()
+    Scraper.main(parse['v'][0])
     results_frame = Frame(root)
     results_frame.pack(side=BOTTOM)
     comments = Button(search_frame, text="Show Comments", command=lambda: show_comments(comments, start_algo))
     comments.pack(side=LEFT)
 
     all_values = []
-    for row in Sqlite.query("""evaluation_value <> 0 """, 'Comments'):
+    for row in Sqlite.query("*", "evaluation_value <> 0 ", 'Comments'):
         all_values.append(row[-1])
     averageSentiment = ((sum(all_values) / len(all_values) + 1) / 2) * 100
     s = Style()
@@ -75,13 +74,6 @@ def start():
 
     sentiment_label = Label(results_frame, text='Overall Sentiment Value: ' + str(round(progressbar['value'])))
     sentiment_label.pack(side=BOTTOM)
-    records = Sqlite.query(None, 'Comments')
-    for record in records:
-        # response = requests.get(record[7])
-    #     img_data = response.content
-    #     img = ImageTk.PhotoImage(PIL.Image.open(BytesIO(img_data)).resize((50, 50)))
-    #     images[record[0]] = img
-        links[record[0]] = 'https://www.youtube.com/channel/' + str(record[8])
     print('\n[{:.2f} seconds] Done!'.format(time.time() - start_time))
 
 
@@ -148,17 +140,21 @@ def get_replies(cid, censor):
     secondary_frame = Frame(canvas)
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")
 
-    replies = Sqlite.query("""original_comment_id = '""" + cid + """'""", 'Replies')
+    replies = Sqlite.query("*", "original_comment_id = '" + cid + "'", 'Replies')
     records = []
     for reply in replies:
-        for l in Sqlite.query("""cid = '""" + reply[1] + """'""", 'Comments'):
+        for l in Sqlite.query("*", "cid = '" + reply[1] + "'", 'Comments'):
             records.append(l)
     build_comments(records, secondary_frame, censor)
 
 
 def build_comments(records, secondary_frame, censor):
-    print(Gui.page)
-    print(records)
+    for record in records:
+        response = requests.get(record[7])
+        img_data = response.content
+        img = ImageTk.PhotoImage(PIL.Image.open(BytesIO(img_data)).resize((50, 50)))
+        images[record[0]] = img
+        links[record[0]] = 'https://www.youtube.com/channel/' + str(record[8])
     buttons = dict()
     replies = dict()
     for record in records:
@@ -220,6 +216,8 @@ def getNextComments(records, parameters):
 
 
 def getPreviousComments(records, parameters):
+    if Gui.page == 0:
+        return
     Gui.page -= 1
     getComments(records, parameters, False)
 
@@ -227,7 +225,7 @@ def getPreviousComments(records, parameters):
 def getComments(filter, parameters, samePage):
     if samePage:
         Gui.page = 0
-    records = Sqlite.query("""evaluation = '""" + filter + """'""", 'Comments')
+    records = Sqlite.query("*", "evaluation = '" + filter + "'", 'Comments')
 
     if parameters[2].get() == "on":
         records.sort(key=lambda tup: tup[4], reverse=True)
@@ -279,8 +277,8 @@ def getComments(filter, parameters, samePage):
     Button(button_menu, text="Negative", command=lambda: getComments('negative', parameters, True)).pack(side=LEFT)
     Button(button_menu, text="Constructive", command=lambda: getComments('constructive', parameters, True)).pack(side=LEFT)
 
-    Button(nav_bar, text="Next", command=lambda: getNextComments(filter, new_parameters)).pack(side=LEFT)
-    Button(nav_bar, text="Previous", command=lambda: getPreviousComments(filter, new_parameters)).pack(side=RIGHT)
+    Button(nav_bar, text="Next", command=lambda: getNextComments(filter, new_parameters)).pack(side=RIGHT)
+    Button(nav_bar, text="Previous", command=lambda: getPreviousComments(filter, new_parameters)).pack(side=LEFT)
 
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")
 
