@@ -52,20 +52,39 @@ def delete_all_data_in_tables():
             sqliteConnection.close()
             # print("The SQLite connection is closed")
 
-def query(query, table):
+
+def update(table, value, query):
+    global sqliteConnection
+    try:
+        sqliteConnection = sqlite3.connect('comments.sqlite')
+        cursor = sqliteConnection.cursor()
+
+        sqlite_update = """UPDATE """ + table + """ SET """ + value + """ WHERE """ + query + """;"""
+        cursor.execute(sqlite_update)
+        sqliteConnection.commit()
+
+        cursor.close()
+
+    except sqlite3.Error as error:
+        print("Failed to update data in sqlite table", error)
+    finally:
+        if sqliteConnection:
+            sqliteConnection.close()
+            # print("The SQLite connection is closed")
+
+
+def query(column, query, table):
     global sqliteConnection
     try:
         sqliteConnection = sqlite3.connect('comments.sqlite')
         cursor = sqliteConnection.cursor()
         # print("Connected to SQLite")
         if query is None:
-            sqlite_query = """SELECT * FROM """ + table + """;"""
+            sqlite_query = """SELECT """ + column + """ FROM """ + table + """;"""
         else:
-            sqlite_query = """SELECT * FROM """ + table + """ WHERE """ + query + """;"""
+            sqlite_query = """SELECT """ + column + """ FROM """ + table + """ WHERE """ + query + """;"""
         cursor.execute(sqlite_query)
         return cursor.fetchall()
-
-        cursor.close()
 
     except sqlite3.Error as error:
         print(error)

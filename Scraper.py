@@ -10,7 +10,9 @@ import time
 import re
 import requests
 
+import Algorithm
 import Main
+import Sqlite
 
 YOUTUBE_VIDEO_URL = 'https://www.youtube.com/watch?v={youtube_id}'
 
@@ -102,16 +104,13 @@ def download_comments(youtube_id, sort_by=SORT_BY_RECENT, language=None, sleep=.
         # TRY ADDING TO THE JSON BELOW TO MAKE IT ACTUALLY FUNCTION LIKE A JSON FILE POG?
 
         for comment in reversed(list(search_dict(response, 'commentRenderer'))):
-            yield {'cid': comment['commentId'],
-                        'text': ''.join([c['text'] for c in comment['contentText'].get('runs', [])]),
-                        'time': comment['publishedTimeText']['runs'][0]['text'],
-                        'author': comment.get('authorText', {}).get('simpleText', ''),
-                        'channel': comment['authorEndpoint']['browseEndpoint'].get('browseId', ''),
-                        'votes': comment.get('voteCount', {}).get('simpleText', '0'),
-                        'photo': comment['authorThumbnail']['thumbnails'][-1]['url'],
-                        'heart': next(search_dict(comment, 'isHearted'), False)}
+            Algorithm.addReply(comment)
+            Algorithm.main(comment)
 
         time.sleep(sleep)
+    Algorithm.updateSubCount()
+    Algorithm.updateReplies()
+
 
 
 def search_dict(partial, search_key):
@@ -142,37 +141,24 @@ def main(id):
     parser.add_argument('-s', type=int, default=SORT_BY_RECENT,
                         help='Whether to download popular (0) or recent comments (1). Defaults to 1')
 
-    argv = ['-y', id, '-o', 'comments.json']
+    argv = ['-y', id]
     try:
         args = parser.parse_args() if argv is None else parser.parse_args(argv)
 
         youtube_id = args.y
-        output = args.o
-        limit = args.l
 
-        if not youtube_id or not output:
+        if not youtube_id:
             parser.print_usage()
-            raise ValueError('you need to specify a Youtube ID and an output filename')
+            raise ValueError('you need to specify a Youtube ID')
 
-        if os.sep in output:
-            outdir = os.path.dirname(output)
-            if not os.path.exists(outdir):
-                os.makedirs(outdir)
 
         print('Downloading Youtube comments for video:', youtube_id)
         count = 0
-        with io.open(output, 'w', encoding='utf8') as fp:
-            sys.stdout.write('Downloaded %d comment(s)\r' % count)
-            sys.stdout.flush()
-            start_time = time.time()
-            for comment in download_comments(youtube_id, args.s, args.l):
-                comment_json = json.dumps(comment, ensure_ascii=False)
-                print(comment_json.decode('utf-8') if isinstance(comment_json, bytes) else comment_json, file=fp)
-                count += 1
-                sys.stdout.write('Downloaded %d comment(s)\r' % count)
-                sys.stdout.flush()
-                if limit and count >= limit:
-                    break
+        sys.stdout.write('Downloaded %d comment(s)\r' % count)
+        sys.stdout.flush()
+        Sqlite.delete_all_data_in_tables()
+        start_time = time.time()
+        download_comments(youtube_id, args.s, args.l)
         print('\n[{:.2f} seconds] Done!'.format(time.time() - start_time))
 
     except Exception as e:
