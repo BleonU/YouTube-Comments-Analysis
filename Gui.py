@@ -1,23 +1,19 @@
 import webbrowser
-# from profanity_filter import ProfanityFilter
-from tkinter.ttk import *
-
-import numpy as np
-from better_profanity import profanity
-
 import time
 import PIL
-from PIL import ImageTk, Image
-import os
 import requests
-from io import BytesIO
-from tkinter import *
-
+import Algorithm
 import Gui
-import Main
 import Parsing
 import Scraper
 import Sqlite
+from tkinter.ttk import *
+from better_profanity import profanity
+from PIL import ImageTk, Image
+from io import BytesIO
+from tkinter import *
+
+import Youtube
 
 root = Tk()
 search_frame = Frame(root)
@@ -35,21 +31,28 @@ def callback(url):
     webbrowser.open_new(url)
 
 
-def close(window, button, button2):
-    button2['state'] = NORMAL
-
-    button.destroy()
+def close(window, start_algo_button):
+    start_algo_button['state'] = NORMAL
     window.destroy()
 
 
 def start():
+    Sqlite.deleteAllDataInTables()
     start_time = time.time()
     parse = Parsing.main(e.get())
-    Scraper.main(parse['v'][0])
+    details = Youtube.getCommentThreads(None, parse['v'][0])
+    for item in details['items']:
+        Algorithm.main(item)
+    while "nextPageToken" in details:
+        details = Youtube.getCommentThreads(details['nextPageToken'], parse['v'][0])
+        for items in details['items']:
+            Algorithm.main(items)
+    # Scraper.main()
+    Algorithm.updateSubCount()
+    Algorithm.updateReplies()
+    Algorithm.updateSentiment()
     results_frame = Frame(root)
     results_frame.pack(side=BOTTOM)
-    comments = Button(search_frame, text="Show Comments", command=lambda: show_comments(comments, start_algo))
-    comments.pack(side=LEFT)
 
     all_values = []
     for row in Sqlite.query("*", "evaluation_value <> 0 ", 'Comments'):
@@ -74,14 +77,17 @@ def start():
 
     sentiment_label = Label(results_frame, text='Overall Sentiment Value: ' + str(round(progressbar['value'])))
     sentiment_label.pack(side=BOTTOM)
+    comments = Button(search_frame, text="Show Comments", command=lambda: show_comments(comments, start_algo, results_frame))
+    comments.pack(side=LEFT)
     print('\n[{:.2f} seconds] Done!'.format(time.time() - start_time))
 
 
 
 
-def show_comments(button, button2):
-    button['state'] = DISABLED
-    button2['state'] = DISABLED
+def show_comments(comments_button, start_algo_button, frame):
+    start_algo_button['state'] = DISABLED
+    comments_button.destroy()
+    frame.destroy()
 
 
     window = Toplevel()
@@ -112,14 +118,14 @@ def show_comments(button, button2):
     Radiobutton(button_menu, text="Uncensored", variable=option, value="uncensored").pack(side=RIGHT)
     Radiobutton(button_menu, text="Clean", variable=option, value="clean").pack(side=RIGHT)
 
-    parameters = [main_frame, option, likes, subs, window, button, button2]
+    parameters = [main_frame, option, likes, subs, window, start_algo_button]
 
     Button(button_menu, text="Positive", command=lambda: getComments('positive', parameters, True)).pack(side=LEFT)
     Button(button_menu, text="Negative", command=lambda: getComments('negative', parameters, True)).pack(side=LEFT)
     Button(button_menu, text="Constructive", command=lambda: getComments('constructive', parameters, True)).pack(side=LEFT)
 
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")
-    window.protocol("WM_DELETE_WINDOW", lambda: close(parameters[4], parameters[5], parameters[6]))
+    window.protocol("WM_DELETE_WINDOW", lambda: close(parameters[4], parameters[5]))
 
 
 
@@ -184,7 +190,7 @@ def build_comments(records, secondary_frame, censor):
         buttons[record[0]] = Button(name, text=record[5],
                                     command=lambda a=record[0]: callback(links.get(a)), borderwidth=0)
 
-        if record[2] is -1:
+        if record[2] == -1:
             subscribers = 'HIDDEN'
         else:
             subscribers = record[2]
@@ -210,9 +216,11 @@ def build_comments(records, secondary_frame, censor):
         text_label.pack()
 
 
-def getNextComments(records, parameters):
+def getNextComments(records, filter, parameters):
+    if Gui.page == len(records) - 1:
+        return
     Gui.page += 1
-    getComments(records, parameters, False)
+    getComments(filter, parameters, False)
 
 
 def getPreviousComments(records, parameters):
@@ -225,7 +233,11 @@ def getPreviousComments(records, parameters):
 def getComments(filter, parameters, samePage):
     if samePage:
         Gui.page = 0
-    records = Sqlite.query("*", "evaluation = '" + filter + "'", 'Comments')
+    if filter == 'negative':
+        records = Sqlite.query("*", "evaluation = '" + filter + "' AND parent = 'yes' ORDER BY evaluation_value ASC", 'Comments')
+    else:
+        records = Sqlite.query("*", "evaluation = '" + filter + "' AND parent = 'yes' ORDER BY evaluation_value DESC", 'Comments')
+
 
     if parameters[2].get() == "on":
         records.sort(key=lambda tup: tup[4], reverse=True)
@@ -241,7 +253,7 @@ def getComments(filter, parameters, samePage):
     main_frame = Frame(old_window)
     main_frame.pack(fill=BOTH, expand=1)
 
-    old_window.protocol("WM_DELETE_WINDOW", lambda: close(parameters[4], parameters[5], parameters[6]))
+    old_window.protocol("WM_DELETE_WINDOW", lambda: close(parameters[4], parameters[5]))
 
     canvas = Canvas(main_frame, height=800, width=600)
     canvas.pack(side=LEFT, fill=BOTH, expand=1)
@@ -270,14 +282,14 @@ def getComments(filter, parameters, samePage):
     Radiobutton(button_menu, text="Uncensored", variable=option, value="uncensored").pack(side=RIGHT)
     Radiobutton(button_menu, text="Clean", variable=option, value="clean").pack(side=RIGHT)
 
-    new_parameters = [main_frame, censor, parameters[2], parameters[3], old_window, parameters[5], parameters[6]]
-    parameters = [main_frame, option, likes, subs, old_window, parameters[5], parameters[6]]
+    new_parameters = [main_frame, censor, parameters[2], parameters[3], old_window, parameters[5]]
+    parameters = [main_frame, option, likes, subs, old_window, parameters[5]]
 
     Button(button_menu, text="Positive", command=lambda: getComments('positive', parameters, True)).pack(side=LEFT)
     Button(button_menu, text="Negative", command=lambda: getComments('negative', parameters, True)).pack(side=LEFT)
     Button(button_menu, text="Constructive", command=lambda: getComments('constructive', parameters, True)).pack(side=LEFT)
 
-    Button(nav_bar, text="Next", command=lambda: getNextComments(filter, new_parameters)).pack(side=RIGHT)
+    Button(nav_bar, text="Next", command=lambda: getNextComments(records, filter, new_parameters)).pack(side=RIGHT)
     Button(nav_bar, text="Previous", command=lambda: getPreviousComments(filter, new_parameters)).pack(side=LEFT)
 
     canvas.create_window((0, 0), window=secondary_frame, anchor="nw")

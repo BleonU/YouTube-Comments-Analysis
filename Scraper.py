@@ -156,7 +156,7 @@ def main(id):
         count = 0
         sys.stdout.write('Downloaded %d comment(s)\r' % count)
         sys.stdout.flush()
-        Sqlite.delete_all_data_in_tables()
+        Sqlite.deleteAllDataInTables()
         start_time = time.time()
         download_comments(youtube_id, args.s, args.l)
         print('\n[{:.2f} seconds] Done!'.format(time.time() - start_time))

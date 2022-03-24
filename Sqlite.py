@@ -1,21 +1,19 @@
 import sqlite3
 
 
-def insert_variable_into_table(cid, evaluation, likes, subcount, repliesAmount, name, text, image, link, value):
+def insertVariableIntoComments(cid, evaluation, likes, subcount, repliesAmount, name, text, image, link, value, parent):
     global sqliteConnection
     try:
         sqliteConnection = sqlite3.connect('comments.sqlite')
         cursor = sqliteConnection.cursor()
-        # print("Connected to SQLite")
 
         sqlite_insert_with_param = """INSERT INTO Comments
-                          (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link, evaluation_value) 
-                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
+                          (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link, evaluation_value, parent) 
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"""
 
-        data_tuple = (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link, value)
+        data_tuple = (cid, evaluation, subcount, repliesAmount, likes, name, text, image, link, value, parent)
         cursor.execute(sqlite_insert_with_param, data_tuple)
         sqliteConnection.commit()
-        # print("Python Variables inserted successfully into SqliteDb_developers table")
 
         cursor.close()
 
@@ -24,15 +22,13 @@ def insert_variable_into_table(cid, evaluation, likes, subcount, repliesAmount, 
     finally:
         if sqliteConnection:
             sqliteConnection.close()
-            # print("The SQLite connection is closed")
 
 
-def delete_all_data_in_tables():
+def deleteAllDataInTables():
     global sqliteConnection
     try:
         sqliteConnection = sqlite3.connect('comments.sqlite')
         cursor = sqliteConnection.cursor()
-        # print("Connected to SQLite")
 
         sqlite_delete = """DELETE FROM Comments;"""
         cursor.execute(sqlite_delete)
@@ -41,7 +37,6 @@ def delete_all_data_in_tables():
         cursor.execute(sqlite_delete)
 
         sqliteConnection.commit()
-        # print("Python Variables inserted successfully into SqliteDb_developers table")
 
         cursor.close()
 
@@ -50,7 +45,6 @@ def delete_all_data_in_tables():
     finally:
         if sqliteConnection:
             sqliteConnection.close()
-            # print("The SQLite connection is closed")
 
 
 def update(table, value, query):
@@ -70,7 +64,6 @@ def update(table, value, query):
     finally:
         if sqliteConnection:
             sqliteConnection.close()
-            # print("The SQLite connection is closed")
 
 
 def query(column, query, table):
@@ -78,7 +71,6 @@ def query(column, query, table):
     try:
         sqliteConnection = sqlite3.connect('comments.sqlite')
         cursor = sqliteConnection.cursor()
-        # print("Connected to SQLite")
         if query is None:
             sqlite_query = """SELECT """ + column + """ FROM """ + table + """;"""
         else:
@@ -92,12 +84,11 @@ def query(column, query, table):
         if sqliteConnection:
             sqliteConnection.close()
 
-def insert_variable_into_replies(ocid, cid):
+def insertVariableIntoReplies(ocid, cid):
     global sqliteConnection
     try:
         sqliteConnection = sqlite3.connect('comments.sqlite')
         cursor = sqliteConnection.cursor()
-        # print("Connected to SQLite")
 
         sqlite_insert_with_param = """INSERT INTO Replies
                           (original_comment_id, comment_id) 
@@ -106,7 +97,6 @@ def insert_variable_into_replies(ocid, cid):
         data_tuple = (ocid, cid)
         cursor.execute(sqlite_insert_with_param, data_tuple)
         sqliteConnection.commit()
-        # print("Python Variables inserted successfully into SqliteDb_developers table")
 
         cursor.close()
 
@@ -115,4 +105,3 @@ def insert_variable_into_replies(ocid, cid):
     finally:
         if sqliteConnection:
             sqliteConnection.close()
-            # print("The SQLite connection is closed")
