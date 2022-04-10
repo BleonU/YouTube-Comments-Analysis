@@ -12,6 +12,13 @@ import Youtube
 nltk.download('vader_lexicon')
 
 
+def emotion(ss):
+    storage = []
+    for k in sorted(ss):
+        storage.append([k, ss[k]])
+    return storage
+
+
 def addReply(data):
     commentId = data['commentId']
     splitCommentId = commentId.split(".")
@@ -47,13 +54,13 @@ def updateReplies():
 
 def updateSubCount():
     concatId = []
-    i = 0
+    counter = 0
     for row in sql.query("link", "evaluation_value <> 0 ", 'Comments'):
         concatId.append(row[0])
-        i += 1
-        if i == 100 or row is sql.query("link", "evaluation_value <> 0 ", 'Comments')[-1]:
-            i = 0
-            details = Youtube.main(','.join(concatId))
+        counter += 1
+        if counter == 50 or row[0] == sql.query("link", "evaluation_value <> 0 ", 'Comments')[-1][0]:
+            counter = 0
+            details = Youtube.getChannelInfomation(','.join(concatId))
             concatId = []
             for items in details['items']:
                 if items['statistics']['hiddenSubscriberCount']:
@@ -89,7 +96,8 @@ def updateSentiment():
         sentiment = 'whatever'
         if overall[0][1] != 0:
             if overall[1][1] > 0 and overall[3][1] > 0:
-                sentiment = 'constructive'
+                if len(row[6].split('.')) > 2:
+                    sentiment = 'constructive'
             elif overall[1][1] + likeAmplifier > 0.5:
                 sentiment = 'negative'
             elif overall[3][1] + likeAmplifier > 0.5:
@@ -109,20 +117,22 @@ def main(item):
     snippet = item['snippet']['topLevelComment']['snippet']
     id = item['snippet']['topLevelComment']['id']
     replies = item['snippet']['totalReplyCount']
-    sql.insertVariableIntoComments(id, 'whatever', snippet['likeCount'], replies, 0,
-                                   snippet['authorDisplayName'], snippet['textOriginal'],
-                                   snippet['authorProfileImageUrl'],
-                                   snippet['authorChannelId']['value'], 0, 'yes')
+    if snippet['authorDisplayName'] != '':
+        sql.insertVariableIntoComments(id, 'whatever', snippet['likeCount'], replies, 0,
+                                       snippet['authorDisplayName'], snippet['textOriginal'],
+                                       snippet['authorProfileImageUrl'],
+                                       snippet['authorChannelId']['value'], 0, 'yes')
     if replies > 0:
         details = Youtube.getCommentReplies(id)
         for item in details['items']:
             snippet = item['snippet']
             id = item['id']
-            sql.insertVariableIntoComments(id, 'whatever', snippet['likeCount'], replies, 0,
-                                           snippet['authorDisplayName'], snippet['textOriginal'],
-                                           snippet['authorProfileImageUrl'],
-                                           snippet['authorChannelId']['value'], 0, 'no')
-            sql.insertVariableIntoReplies(snippet['parentId'], id)
+            if snippet['authorDisplayName'] != '':
+                sql.insertVariableIntoComments(id, 'whatever', snippet['likeCount'], replies, 0,
+                                               snippet['authorDisplayName'], snippet['textOriginal'],
+                                               snippet['authorProfileImageUrl'],
+                                               snippet['authorChannelId']['value'], 0, 'no')
+                sql.insertVariableIntoReplies(snippet['parentId'], id)
     # text = ''.join([c['text'] for c in comment['contentText'].get('runs', [])])
     # stringLikes = comment.get('voteCount', {}).get('simpleText', '0')
     # likes = getIntLikes(stringLikes)

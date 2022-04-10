@@ -48,15 +48,15 @@ def start():
         for items in details['items']:
             Algorithm.main(items)
     # Scraper.main()
-    Algorithm.updateSubCount()
     Algorithm.updateReplies()
     Algorithm.updateSentiment()
+    Algorithm.updateSubCount()
     results_frame = Frame(root)
     results_frame.pack(side=BOTTOM)
 
     all_values = []
     for row in Sqlite.query("*", "evaluation_value <> 0 ", 'Comments'):
-        all_values.append(row[-1])
+        all_values.append(row[-2])
     averageSentiment = ((sum(all_values) / len(all_values) + 1) / 2) * 100
     s = Style()
     s.theme_use('clam')
@@ -265,10 +265,11 @@ def getComments(filter, parameters, samePage):
     canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
     secondary_frame = Frame(canvas)
-    nav_bar = Frame(secondary_frame)
-    nav_bar.pack(side=TOP, fill=X)
+
     button_menu = Frame(secondary_frame)
     button_menu.pack(side=TOP, fill=X)
+    nav_bar = Frame(secondary_frame)
+    nav_bar.pack(side=TOP, fill=X)
 
     likes = StringVar(value="off")
     subs = StringVar(value="off")
