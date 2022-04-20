@@ -19,29 +19,6 @@ def emotion(ss):
     return storage
 
 
-def addReply(data):
-    commentId = data['commentId']
-    splitCommentId = commentId.split(".")
-    if len(splitCommentId) > 1:
-        sql.insertVariableIntoReplies(splitCommentId[0], commentId)
-
-
-def getNumberOfSubs(id):
-    details = Youtube.main(id)
-    if len(details) == 3:
-        return "NO"
-    elif details['items'][0]['statistics']['hiddenSubscriberCount']:
-        return "hidden"
-    else:
-        return details['items'][0]['statistics']['subscriberCount']
-
-
-def getSentiment(text):
-    sia = SentimentIntensityAnalyzer()
-    ss = sia.polarity_scores(text)
-    return emotion(ss)
-
-
 def updateReplies():
     numberOfReplies = dict()
     for row in sql.query("original_comment_id", None, 'Replies'):
@@ -71,19 +48,6 @@ def updateSubCount():
                     sql.update('Comments',
                                "subCount = " + items['statistics']['subscriberCount'],
                                "link = '" + items['id'] + "'")
-
-
-# def getIntLikes(stringLikes):
-#     if '.' in stringLikes:
-#         if 'M' in stringLikes:
-#             return int(''.join(stringLikes.replace('M', '').split('.')) + '00000')
-#         else:
-#             return int(''.join(stringLikes.replace('K', '').split('.')) + '00')
-#     else:
-#         if 'M' in stringLikes:
-#             return int(''.join(stringLikes.replace('M', '') + '00000'))
-#         else:
-#             return int(''.join(stringLikes.replace('K', '') + '00'))
 
 
 def updateSentiment():
@@ -133,10 +97,3 @@ def main(item):
                                                snippet['authorProfileImageUrl'],
                                                snippet['authorChannelId']['value'], 0, 'no')
                 sql.insertVariableIntoReplies(snippet['parentId'], id)
-    # text = ''.join([c['text'] for c in comment['contentText'].get('runs', [])])
-    # stringLikes = comment.get('voteCount', {}).get('simpleText', '0')
-    # likes = getIntLikes(stringLikes)
-    # sql.insert_variable_into_table(comment['commentId'], 'whatever',
-    #                                likes, 0, 0, comment.get('authorText', {}).get('simpleText', ''),
-    #                                text, comment['authorThumbnail']['thumbnails'][-1]['url'],
-    #                                comment['authorEndpoint']['browseEndpoint'].get('browseId', ''), 0)

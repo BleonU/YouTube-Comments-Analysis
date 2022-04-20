@@ -5,7 +5,6 @@ import requests
 import Algorithm
 import Gui
 import Parsing
-import Scraper
 import Sqlite
 from tkinter.ttk import *
 from better_profanity import profanity
@@ -47,7 +46,6 @@ def start():
         details = Youtube.getCommentThreads(details['nextPageToken'], parse['v'][0])
         for items in details['items']:
             Algorithm.main(items)
-    # Scraper.main()
     Algorithm.updateReplies()
     Algorithm.updateSentiment()
     Algorithm.updateSubCount()
