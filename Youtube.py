@@ -17,7 +17,7 @@ def main():
 
     # Get credentials and create an API client
     return googleapiclient.discovery.build(
-        api_service_name, api_version, developerKey='AIzaSyAxORJFV63_cYuAceJWuUCs0ZfoGlcAIeU')
+        api_service_name, api_version, developerKey=api_key)
 
 
 def getChannelInfomation(listOfId):
