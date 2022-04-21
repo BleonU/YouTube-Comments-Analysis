@@ -13,6 +13,7 @@ def main():
 
     api_service_name = "youtube"
     api_version = "v3"
+    api_key = 'ENTER YOUR GOOGLE API KEY'
 
     # Get credentials and create an API client
     return googleapiclient.discovery.build(

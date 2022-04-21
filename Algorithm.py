@@ -1,7 +1,3 @@
-import math
-
-import numpy as np
-import text2emotion as t2e
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
